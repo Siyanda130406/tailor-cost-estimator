@@ -11,11 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 import re
 import os
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-import joblib
+import sys
 
 app = Flask(__name__)
 app.secret_key = 'tailor-cost-prediction-secret-key-2024'
@@ -28,7 +24,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# ==================== SIMPLIFIED DATABASE MODELS ====================
+# ==================== DATABASE MODELS ====================
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -64,6 +60,16 @@ class Estimate(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# ==================== CREATE TABLES (Forced) ====================
+def init_db():
+    """Create all database tables"""
+    with app.app_context():
+        db.create_all()
+        print("✅ Database tables created/verified")
+
+# Call this immediately
+init_db()
+
 # ==================== ML PREDICTOR ====================
 FABRIC_PRICES = {
     'Cotton': 90, 'Denim': 114, 'Leather': 275, 'Linen': 140,
@@ -77,24 +83,23 @@ FABRIC_LIST = ['Cotton', 'Denim', 'Leather', 'Linen', 'Nylon', 'Polyester', 'Sil
 GARMENT_MAP = {
     'blouse': 'Blouse', 'dress': 'Dress', 'shirt': 'Shirt', 'jacket': 'Jacket',
     'trousers': 'Trousers', 'jeans': 'Trousers', 'skirt': 'Skirt', 'coat': 'Coat',
-    'hoodie': 'Hoodie', 'suit': 'Suit', 'shorts': 'Shorts'
+    'hoodie': 'Hoodie', 'suit': 'Suit', 'shorts': 'Shorts', 'jersey': 'Jersey',
+    'tracksuit': 'Tracksuit'
 }
 
 FABRIC_MAP = {
     'cotton': 'Cotton', 'silk': 'Silk', 'denim': 'Denim', 'wool': 'Wool',
-    'leather': 'Leather', 'linen': 'Linen', 'polyester': 'Polyester'
+    'leather': 'Leather', 'linen': 'Linen', 'polyester': 'Polyester', 'nylon': 'Nylon'
 }
 
 class Predictor:
-    model = None
-    
     def predict(self, garment, fabric, meters):
         price = FABRIC_PRICES.get(fabric, 100)
         material_cost = round(meters * price, 2)
         
         # Simple formula based on garment complexity
         complexity = {
-            'Blouse': 2.2, 'Shirt': 1.9, 'Trousers': 1.5, 'Jeans': 1.5,
+            'Blouse': 2.2, 'Shirt': 1.9, 'Trousers': 1.5,
             'Dress': 1.4, 'Skirt': 1.5, 'Jacket': 1.3, 'Coat': 1.2,
             'Suit': 1.15, 'Hoodie': 1.4, 'Shorts': 1.7, 'Jersey': 1.5,
             'Tracksuit': 1.3
@@ -175,6 +180,17 @@ def estimator():
                           user=current_user,
                           garments=GARMENT_LIST,
                           fabrics=FABRIC_LIST)
+
+@app.route('/estimator/recent')
+@login_required
+def get_recent_estimates():
+    recent = Estimate.query.filter_by(user_id=current_user.id).order_by(Estimate.created_at.desc()).limit(6).all()
+    html = ''
+    for est in recent:
+        html += f'<div class="recent"><span>{est.garment} - R{est.total_cost:.0f}</span></div>'
+    if not html:
+        html = '<div class="recent muted-item"><span>No estimates yet</span></div>'
+    return jsonify({'recent': html})
 
 @app.route('/api/predict', methods=['POST'])
 @login_required
@@ -304,10 +320,5 @@ def profile():
 
 # ==================== RUN ====================
 if __name__ == '__main__':
-    with app.app_context():
-        db.drop_all()  # This will reset the database
-        db.create_all()  # Create fresh tables
-        print("Database reset and ready!")
-    
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
