@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost Estimator – Tailor System</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="logo">
+        <div class="logo-icon">✦</div>
+        <span class="logo-text">Cost Estimator</span>
+    </div>
+
+    <button class="new-btn" onclick="resetForm()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        <span>New estimate</span>
+    </button>
+
+    <div class="sb-label">Recent</div>
+    <div class="recent-list" id="recentList">
+        {% for est in recent %}
+        <div class="recent {% if loop.first %}active{% endif %}">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span title="{{ est.label }}">{{ est.label[:32] }}</span>
+        </div>
+        {% else %}
+        <div class="recent muted-item">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span>No estimates yet</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="sb-nav">
+        <a href="{{ url_for('estimator') }}" class="sb-nav-item active">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span>Estimator</span>
+        </a>
+        <a href="{{ url_for('history') }}" class="sb-nav-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span>History</span>
+        </a>
+        <a href="{{ url_for('profile') }}" class="sb-nav-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Profile</span>
+        </a>
+        <a href="{{ url_for('logout') }}" class="sb-nav-item sb-nav-logout">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sign Out</span>
+        </a>
+    </div>
+
+    <div class="sb-footer">
+        <div class="user-row">
+            <div class="avatar">{{ user.avatar_initials }}</div>
+            <div>
+                <div class="user-name">{{ user.get_full_name() or user.email }}</div>
+                <div class="user-meta">Tailor · ZAR</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+    <div class="topbar">
+        <div class="topbar-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Cost Estimator — <span>New Estimate</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="flashMessages"></div>
+
+        <div class="hero">
+            <div class="hero-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 4L4 20"/>
+                    <path d="M20 4c0 0-2 0-4 2L4 18l2 2L18 8c2-2 2-4 2-4z"/>
+                    <circle cx="4.5" cy="19.5" r="1.5" fill="currentColor" stroke="none"/>
+                </svg>
+            </div>
+            <h1 class="hero-title"><em>Tailoring Cost Estimator</em></h1>
+        </div>
+
+        <!-- FORM -->
+        <div class="form-card">
+            <form id="estimateForm" onsubmit="submitEstimate(event)">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Garment Type *</label>
+                        <select name="garment" id="garmentType" required>
+                            <option value="">Select type</option>
+                            {% for g in garments %}
+                            <option value="{{ g }}">{{ g }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Fabric Type *</label>
+                        <select name="fabric_type" id="fabricType" required>
+                            <option value="">Select fabric type...</option>
+                            {% for f in fabrics %}
+                            <option value="{{ f }}">{{ f }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field full">
+                        <label>Fabric Meters *</label>
+                        <input type="number" name="fabric_m" id="fabricMeter" min="0.1" max="9.9" step="0.1" placeholder="e.g. 2.5" required />
+                    </div>
+                </div>
+                <button type="submit" class="est-btn" id="estBtn">
+                    <span id="btnTxt">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px"><path d="M20 4L4 20"/><path d="M20 4c0 0-2 0-4 2L4 18l2 2L18 8c2-2 2-4 2-4z"/><circle cx="4.5" cy="19.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+                        Estimate Cost &amp; Materials
+                    </span>
+                    <span class="dots" id="btnDots" style="display:none"><span></span><span></span><span></span></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- RESULT PANEL -->
+        <div class="result" id="result" style="display:none">
+            <div class="result-panels">
+                <div class="result-panel">
+                    <div class="panel-header">
+                        <span class="panel-label">Cost Estimation</span>
+                        <span class="panel-badge badge-green">✓ Estimated</span>
+                    </div>
+                    <div>
+                        <div class="price-label">Production Cost</div>
+                        <div class="price-value" id="priceVal">R 0</div>
+                        <div class="price-range" id="priceRange"></div>
+                    </div>
+                    <div class="divider"></div>
+                    <div id="costBreakItems" style="display:flex;flex-direction:column;gap:6px"></div>
+                </div>
+
+                <div class="result-panel">
+                    <div class="panel-header">
+                        <span class="panel-label">Material Estimation</span>
+                        <span class="panel-badge badge-blue">✓ Calculated</span>
+                    </div>
+                    <div>
+                        <div class="price-label">Material Cost</div>
+                        <div class="mat-value" id="matVal">R 0</div>
+                        <div class="mat-sub" id="matSub"></div>
+                    </div>
+                    <div class="divider"></div>
+                    <div id="matBreakItems" style="display:flex;flex-direction:column;gap:6px"></div>
+                </div>
+            </div>
+
+            <div class="breakdown" id="breakdown"></div>
+            <div class="mat-breakdown" id="matBreakdown"></div>
+        </div>
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <div class="input-bar">
+        <div class="input-row">
+            <span class="cost-badge">COST</span>
+            <input type="text" id="chatIn" placeholder="Describe a garment... e.g. 'silk dress 3m'">
+            <button class="send-btn" onclick="sendChat()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </button>
+        </div>
+        <div class="hint"><kbd>↵</kbd> send · try: <em>"silk dress 3m"</em> or <em>"denim jacket 2.5m"</em></div>
+        <div id="chatResult" style="margin-top: 8px; font-size: 12px; text-align: center;"></div>
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/estimator.js') }}"></script>
+</body>
+</html>

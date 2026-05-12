@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History – Tailor System</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="logo">
+        <div class="logo-icon">✦</div>
+        <span class="logo-text">Cost Estimator</span>
+    </div>
+    <a href="{{ url_for('estimator') }}" class="new-btn" style="text-decoration:none">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        <span>New estimate</span>
+    </a>
+    <div class="sb-nav" style="margin-top:12px">
+        <a href="{{ url_for('estimator') }}" class="sb-nav-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span>Estimator</span>
+        </a>
+        <a href="{{ url_for('history') }}" class="sb-nav-item active">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span>History</span>
+        </a>
+        <a href="{{ url_for('profile') }}" class="sb-nav-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Profile</span>
+        </a>
+        <a href="{{ url_for('logout') }}" class="sb-nav-item sb-nav-logout">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sign Out</span>
+        </a>
+    </div>
+    <div class="sb-footer">
+        <div class="user-row">
+            <div class="avatar">{{ user.avatar_initials }}</div>
+            <div>
+                <div class="user-name">{{ user.get_full_name() or user.email }}</div>
+                <div class="user-meta">Tailor · ZAR</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<main class="main">
+    <div class="topbar">
+        <div class="topbar-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Cost Estimator — <span>Estimate History</span>
+        </div>
+    </div>
+
+    <div class="content" style="padding-bottom:40px">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert-bar alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-val">{{ total_est }}</div>
+                <div class="stat-key">Total Estimates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" style="color:var(--amber)">R {{ "%.2f"|format(avg_cost) }}</div>
+                <div class="stat-key">Average Cost</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" style="color:var(--blue)">R {{ "%.2f"|format(max_cost) }}</div>
+                <div class="stat-key">Highest Estimate</div>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <form method="GET" action="{{ url_for('history') }}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <input type="text" name="search" placeholder="Search by garment, fabric..." 
+                       value="{{ search_query }}" 
+                       style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);min-width:200px">
+                
+                <select name="garment" onchange="this.form.submit()">
+                    <option value="">All Garments</option>
+                    {% for g in garments %}
+                        <option value="{{ g }}" {% if garment_filter == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+                
+                <select name="fabric" onchange="this.form.submit()">
+                    <option value="">All Fabrics</option>
+                    {% for f in fabrics %}
+                        <option value="{{ f }}" {% if fabric_filter == f %}selected{% endif %}>{{ f }}</option>
+                    {% endfor %}
+                </select>
+                
+                <button type="submit" style="padding:8px 16px;background:var(--amber);color:white;border:none;border-radius:8px;cursor:pointer">Search</button>
+                
+                {% if search_query or garment_filter or fabric_filter %}
+                <a href="{{ url_for('history') }}" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--muted)">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+
+        <div class="history-table-wrap">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Garment</th>
+                        <th>Fabric</th>
+                        <th>Meters</th>
+                        <th>Price/m</th>
+                        <th>Material</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for est in estimates %}
+                    <tr>
+                        <td class="muted">{{ loop.index + ((pagination.page - 1) * pagination.per_page) }}</td>
+                        <td><span class="tag-pill">{{ est.garment }}</span></td>
+                        <td><span class="tag-pill tag-blue">{{ est.fabric_type }}</span></td>
+                        <td>{{ est.fabric_m }}m</td>
+                        <td>R{{ est.price_per_m|int }}</td>
+                        <td class="cost-blue">R {{ "%.2f"|format(est.material_cost) }}</td>
+                        <td class="cost-amber"><strong>R {{ "%.2f"|format(est.total_cost) }}</strong></td>
+                        <td class="muted">{{ est.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('delete_estimate', id=est.id) }}" onsubmit="return confirm('Delete this estimate?')">
+                                <button type="submit" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" style="text-align:center;padding:40px;color:var(--muted)">
+                            No estimates found.
+                            <a href="{{ url_for('estimator') }}" style="color:var(--amber)">Create your first estimate →</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <div class="pagination">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('history', page=pagination.prev_num, search=search_query, garment=garment_filter, fabric=fabric_filter) }}" class="page-btn">← Prev</a>
+            {% endif %}
+            <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}
+                <a href="{{ url_for('history', page=pagination.next_num, search=search_query, garment=garment_filter, fabric=fabric_filter) }}" class="page-btn">Next →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</main>
+</body>
+</html>

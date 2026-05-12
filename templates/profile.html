@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile – Tailor System</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="logo">
+        <div class="logo-icon">✦</div>
+        <span class="logo-text">Cost Estimator</span>
+    </div>
+    <a href="{{ url_for('estimator') }}" class="new-btn" style="text-decoration:none">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        <span>New estimate</span>
+    </a>
+    <div class="sb-nav" style="margin-top:12px">
+        <a href="{{ url_for('estimator') }}" class="sb-nav-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span>Estimator</span>
+        </a>
+        <a href="{{ url_for('history') }}" class="sb-nav-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span>History</span>
+        </a>
+        <a href="{{ url_for('profile') }}" class="sb-nav-item active">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Profile</span>
+        </a>
+        <a href="{{ url_for('logout') }}" class="sb-nav-item sb-nav-logout">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sign Out</span>
+        </a>
+    </div>
+    <div class="sb-footer">
+        <div class="user-row">
+            <div class="avatar">{{ user.avatar_initials }}</div>
+            <div>
+                <div class="user-name">{{ user.get_full_name() or user.email }}</div>
+                <div class="user-meta">Tailor · ZAR</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<main class="main">
+    <div class="topbar">
+        <div class="topbar-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Cost Estimator — <span>Profile</span>
+        </div>
+    </div>
+
+    <div class="content" style="padding-bottom:40px">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert-bar alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="profile-wrap">
+            <div class="profile-header">
+                <div class="profile-avatar">{{ user.avatar_initials }}</div>
+                <div>
+                    <div class="profile-name">{{ user.get_full_name() or "Tailor" }}</div>
+                    <div class="profile-email">{{ user.email }}</div>
+                    <div class="profile-inst">{{ user.institution }}</div>
+                </div>
+                <div class="profile-stats">
+                    <div class="pstat">
+                        <div class="pstat-val">{{ total_est }}</div>
+                        <div class="pstat-key">Estimates</div>
+                    </div>
+                    <div class="pstat">
+                        <div class="pstat-val" style="color:var(--amber)">R {{ "%.0f"|format(total_spend) }}</div>
+                        <div class="pstat-key">Total Spent</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-form-card">
+                <div class="profile-form-title">Edit Profile</div>
+                <form method="POST" action="{{ url_for('profile') }}">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label>First Name</label>
+                            <input type="text" name="first_name" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="field">
+                            <label>Last Name</label>
+                            <input type="text" name="last_name" value="{{ user.last_name }}" required>
+                        </div>
+                        <div class="field full">
+                            <label>Institution</label>
+                            <input type="text" name="institution" value="{{ user.institution }}">
+                        </div>
+                        <div class="field full">
+                            <label>Bio</label>
+                            <textarea name="bio" rows="3" placeholder="A short bio...">{{ user.bio }}</textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="est-btn" style="max-width:200px;margin-top:8px">Save Changes</button>
+                </form>
+            </div>
+
+            <div style="margin-top:16px">
+                <a href="{{ url_for('logout') }}" class="signout-link">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Sign out of account
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

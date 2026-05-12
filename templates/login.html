@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login – Tailor Cost Estimator</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body class="auth-body">
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <div class="logo-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M20 4L4 20"/>
+                    <path d="M20 4c0 0-2 0-4 2L4 18l2 2L18 8c2-2 2-4 2-4z"/>
+                    <circle cx="4.5" cy="19.5" r="1.5" fill="currentColor" stroke="none"/>
+                </svg>
+            </div>
+        </div>
+        <h1 class="auth-title">Tailor Cost<br>Prediction System</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form">
+            <div class="auth-field">
+                <input type="email" name="email" placeholder="Enter your email" required>
+            </div>
+            <div class="auth-field">
+                <input type="password" name="password" placeholder="Enter your password" required>
+            </div>
+            <div class="auth-links">
+                <a href="{{ url_for('register') }}">Don't have an account? Sign up</a>
+            </div>
+            <button type="submit" class="auth-btn">Log In</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
