@@ -27,7 +27,7 @@
         {% for est in recent %}
         <div class="recent {% if loop.first %}active{% endif %}">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            <span title="{{ est.label }}">{{ est.label[:32] }}</span>
+            <span title="{{ est.garment }} - R{{ "%.2f"|format(est.total_cost) }}">{{ est.garment }} - R{{ "%.2f"|format(est.total_cost) }}</span>
         </div>
         {% else %}
         <div class="recent muted-item">
@@ -58,7 +58,7 @@
 
     <div class="sb-footer">
         <div class="user-row">
-            <div class="avatar">{{ user.avatar_initials }}</div>
+            <div class="avatar">{{ user.avatar_initials if user.avatar_initials else user.first_name[0]|upper if user.first_name else 'U' }}</div>
             <div>
                 <div class="user-name">{{ user.get_full_name() or user.email }}</div>
                 <div class="user-meta">Tailor · ZAR</div>

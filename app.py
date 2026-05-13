@@ -187,9 +187,9 @@ def get_recent_estimates():
     recent = Estimate.query.filter_by(user_id=current_user.id).order_by(Estimate.created_at.desc()).limit(6).all()
     html = ''
     for est in recent:
-        html += f'<div class="recent"><span>{est.garment} - R{est.total_cost:.0f}</span></div>'
+        html += f'<div class="recent"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>{est.garment} - R{est.total_cost:.2f}</span></div>'
     if not html:
-        html = '<div class="recent muted-item"><span>No estimates yet</span></div>'
+        html = '<div class="recent muted-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>No estimates yet</span></div>'
     return jsonify({'recent': html})
 
 @app.route('/api/predict', methods=['POST'])
